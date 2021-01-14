@@ -18,5 +18,16 @@
     <ClCompile Include="digImg-Personal.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ImgProcess.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ImgProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

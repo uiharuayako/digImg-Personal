@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cv;
 
-int main()
+int main21()
 {
 	Mat img = imread("ik_beijing_c.bmp");
 
