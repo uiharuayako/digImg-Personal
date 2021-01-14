@@ -6,6 +6,7 @@ void ImgProcess::imgShowSave(Mat img, string title)
 	namedWindow(title, 0);
 	imshow(title, img);
 	imwrite(title + ".bmp", img);
+	waitKey();
 }
 
 ImgProcess::ImgProcess(string imgPath, int cols, int rows, int type)
@@ -112,7 +113,7 @@ cv::Mat ImgProcess::pass(vector<double> myTemplate)
 	int tempSize = sqrt(myTemplate.size()); // 读取模板大小
 	int calSize = (tempSize - 1) / 2; // 用于计算的模板大小
 	//vector<int> myPixels; // 为模板涉及到的内存开辟一个vector数组
-	auto* myPixels = new int(myTemplate.size()); // 为模板涉及到的内存开辟一个int数组
+	auto* myPixels = new double(myTemplate.size()); // 为模板涉及到的内存开辟一个int数组
 	int pixelNum = 0; // 当前处理的是第n个像素
 	int totalpixel = 0; // 像素总灰度级
 	// 五层嵌套循环，第一层，n个通道
@@ -492,6 +493,52 @@ void ImgProcess::imgBinOTSU()
 	imgShowSave(binImg, "OTSU法二值化");
 }
 
+void ImgProcess::imgAutoCorr()
+{
+	// 首先还是搞个灰度图像
+	imwrite("picPre.bmp", myImg);
+	Mat binImg = imread("picPre.bmp", IMREAD_GRAYSCALE);
+	int i, j; // i，j嵌套循环用了两次，最好前面就定义一下
+	// 根据自相关函数那个很复杂的式子来写，自相关函数的分母是固定的，其分母设为deno
+	int deno = 0;
+	for (i = 0; i < imRows; i++) {
+		for (j = 0; j < imCols; j++) {
+			// 两次循环嵌套，遍历原来的图像
+			// 计算像素值平方和
+			deno = deno + (int)binImg.at<uchar>(i, j) * (int)binImg.at<uchar>(i, j);
+		}
+	}
+	// 然后创建一个目标图像
+	int nume = 0;// 搞一个分子，分子每次都在变
+	Mat autoCorrImg;
+	autoCorrImg.create(myImg.size(), binImg.type());
+	for(i = 0; i < imRows; i++) {
+		for (j = 0; j < imCols; j++) {
+			// 两次循环嵌套，遍历新的图像
+			for (int m = 0; m < imRows; m++) {
+				for (int n = 0; n < imCols; n++) {
+					// 两次循环嵌套，就是分子
+					// 这里后面的m+i，n+j就是书上的i+x，j+y
+					if (m + i > imRows - 1 || n + j > imCols - 1) {
+						nume = 0;
+					}
+					else
+					{
+						// 这行代码实现分子的累加
+						nume = nume + (int)binImg.at<uchar>(m, n) * (int)binImg.at<uchar>(m + i, n + j);
+					}
+				}
+			}
+			// 分子计算完毕
+			// 对当前像素赋值
+			autoCorrImg.at<uchar>(i, j) = saturate_cast<uchar>(nume / deno);
+			// 分子归0，等待下次计算
+			nume = 0;
+		}
+	}
+	imgShowSave(autoCorrImg, "自相关函数图像");
+}
+
 void ImgProcess::bin2Color()
 {
 	// 整个灰度图像
@@ -545,7 +592,7 @@ void ImgProcess::bin2Color()
 	imgShowSave(fakeColoredImg, "伪彩色图像");
 }
 
-void ImgProcess::colorBalance()
+void ImgProcess::whiteBalance()
 {
 	Mat dst;
 	dst.create(myImg.size(), myImg.type());
@@ -624,4 +671,26 @@ void ImgProcess::colorBalance()
 		}
 	}
 	imgShowSave(dst, "色彩平衡后");
+}
+
+void ImgProcess::colorBalance(int deltaR, int deltaG, int deltaB)
+{
+	Mat cbImg; // 用于储存色彩平衡后的图像
+	cbImg.create(myImg.size(), myImg.type());
+	// 初始，全部赋0
+	cbImg = cv::Scalar::all(0);
+
+	for (int i = 0; i < imRows; i++)
+	{
+		auto* src = (uchar*)(myImg.data + myImg.step * i);
+		auto* dst = (uchar*)cbImg.data + cbImg.step * i;
+		for (int j = 0; j < imCols; j++)
+		{
+			// 注意，opencv的RGB是反的
+			dst[j * channelNum] = saturate_cast<uchar>(src[j * channelNum] + deltaB);
+			dst[j * channelNum + 1] = saturate_cast<uchar>(src[j * channelNum + 1] + deltaG);
+			dst[j * channelNum + 2] = saturate_cast<uchar>(src[j * channelNum + 2] + deltaR);
+		}
+	}
+	imgShowSave(cbImg, "自定义色彩平衡后");
 }
