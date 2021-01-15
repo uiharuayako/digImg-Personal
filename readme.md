@@ -12,6 +12,8 @@
 * 色彩平衡
 
 ## 程序代码请对照查阅ImgProcess.h与ImgProcess.cpp（主要是.h）
+## 头文件中描述了程序所有的函数功能
+## 所有算法均在ImgProcess.cpp中实现
 ## 命令行界面由main.cpp实现
-
+## 打开程序根目录下digImg_P_code.exe可以运行程序
 
